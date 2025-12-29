@@ -1,0 +1,95 @@
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "refresh, health, info"
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+          lower-case-service-id: true
+      httpclient:
+        connect-timeout: 1000
+        response-timeout: 4s
+      routes:
+        - id: exercise-service
+          uri: lb://exercise-service
+          predicates:
+            - Path=/api/v1/exercises/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
+            - name: CircuitBreaker
+              args:
+                name: exerciseCB
+                fallbackUri: forward:/fallback/exercise
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@userKeyResolver}"
+
+        - id: workout-service
+          uri: lb://workout-service
+          predicates:
+            - Path=/api/v1/workouts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: workoutCB
+                fallbackUri: forward:/fallback/workout
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@userKeyResolver}"
+
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userCB
+                fallbackUri: forward:/fallback/user
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowSize: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10000
+        permittedNumberOfCallsInHalfOpenState: 3
+    instances:
+      exerciseCB:
+        baseConfig: default
+      workoutCB:
+        baseConfig: default
+      userCB:
+        baseConfig: default
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 3s
