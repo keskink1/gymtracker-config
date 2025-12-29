@@ -25,6 +25,10 @@ management:
       show-details: always
 
 eureka:
+  instance:
+    health-check-url-path: /actuator/health
   client:
+    healthcheck:
+      enabled: true
     service-url:
       defaultZone: http://localhost:8761/eureka/
