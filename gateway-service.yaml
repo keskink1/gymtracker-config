@@ -5,7 +5,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: "refresh, health, info"
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
 
 spring:
   data:
@@ -96,3 +106,15 @@ resilience4j:
     configs:
       default:
         timeoutDuration: 3s
+
+
+springdoc:
+  swagger-ui:
+    urls:
+      - name: Exercise Service
+        url: /api/v1/exercises/v3/api-docs
+      - name: Workout Service
+        url: /api/v1/workouts/v3/api-docs
+      - name: User Service
+        url: /api/v1/users/v3/api-docs
+    path: /swagger-ui.html
