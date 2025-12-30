@@ -2,18 +2,25 @@ server:
   port: 8083
 
 spring:
+  application:
+    name: workout-service
+
   datasource:
-    url: jdbc:h2:mem:workoutdb
-    driverClassName: org.h2.Driver
-    username: sa
-    password: ''
-  h2:
-    console:
-      enabled: true
+    url: jdbc:postgresql://workoutdb:5432/workoutdb
+    username: postgres
+    password: ${WORKOUT_DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
   jpa:
-    database-platform: org.hibernate.dialect.H2Dialect
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+    show-sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
 
 management:
   endpoints:
@@ -25,17 +32,10 @@ management:
       show-details: always
       probes:
         enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
 
 eureka:
-  instance:
-    health-check-url-path: /actuator/health
   client:
-    healthcheck:
-      enabled: true
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      defaultZone: http://eurekaserver:8761/eureka/
+  instance:
+    prefer-ip-address: false
