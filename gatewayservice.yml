@@ -24,63 +24,61 @@ spring:
       port: 6379
   cloud:
     gateway:
-      server:
-        webflux:
-          discovery:
-            locator:
-              enabled: false
-              lower-case-service-id: true
-          routes:
-            - id: exercise-service
-              uri: lb://exercise-service
-              predicates:
-                - Path=/api/v1/exercises/**
-              filters:
-                - name: Retry
-                  args:
-                    retries: 3
-                    methods: GET,POST
-                    backoff:
-                      firstBackoff: 50ms
-                      maxBackoff: 500ms
-                - name: CircuitBreaker
-                  args:
-                    name: exerciseCB
-                    fallbackUri: forward:/fallback/exercise
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 5
-                    redis-rate-limiter.burstCapacity: 10
-                    key-resolver: "#{@userKeyResolver}"
+      discovery:
+        locator:
+          enabled: true
+          lower-case-service-id: true
+      routes:
+        - id: exercise-service
+          uri: lb://exercise-service
+          predicates:
+            - Path=/api/v1/exercises/**
+          filters:
+            - name: Retry
+              args:
+                retries: 3
+                methods: GET,POST
+                backoff:
+                  firstBackoff: 50ms
+                  maxBackoff: 500ms
+            - name: CircuitBreaker
+              args:
+                name: exerciseCB
+                fallbackUri: forward:/fallback/exercise
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@userKeyResolver}"
 
-            - id: workout-service
-              uri: lb://workout-service
-              predicates:
-                - Path=/api/v1/workouts/**
-              filters:
-                - name: CircuitBreaker
-                  args:
-                    name: workoutCB
-                    fallbackUri: forward:/fallback/workout
-                - name: RequestRateLimiter
-                  args:
-                    redis-rate-limiter.replenishRate: 5
-                    redis-rate-limiter.burstCapacity: 10
-                    key-resolver: "#{@userKeyResolver}"
+        - id: workout-service
+          uri: lb://workout-service
+          predicates:
+            - Path=/api/v1/workouts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: workoutCB
+                fallbackUri: forward:/fallback/workout
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 5
+                redis-rate-limiter.burstCapacity: 10
+                key-resolver: "#{@userKeyResolver}"
 
-            - id: user-service
-              uri: lb://user-service
-              predicates:
-                - Path=/api/v1/users/**
-              filters:
-                - name: CircuitBreaker
-                  args:
-                    name: userCB
-                    fallbackUri: forward:/fallback/user
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userCB
+                fallbackUri: forward:/fallback/user
 
-          httpclient:
-            connect-timeout: 1000
-            response-timeout: 4s
+      httpclient:
+        connect-timeout: 1000
+        response-timeout: 4s
 
 eureka:
   client:
@@ -91,6 +89,7 @@ eureka:
       defaultZone: http://eurekaserver:8761/eureka/
   instance:
     prefer-ip-address: true
+    instance-id: ${spring.application.name}:${random.value}
 
 resilience4j:
   circuitbreaker:
@@ -111,7 +110,6 @@ resilience4j:
     configs:
       default:
         timeoutDuration: 3s
-
 
 springdoc:
   swagger-ui:
