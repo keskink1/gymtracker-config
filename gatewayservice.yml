@@ -42,11 +42,17 @@ spring:
                 name: workoutCB
                 fallbackUri: forward:/fallback/workout
 
-        # USER(AUTH) SERVICE
+        # USER SERVICE - AUTH
+        - id: user-service-auth
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/**
+
+        # USER SERVICE - USERS
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/users/**, /api/auth/**
+            - Path=/api/v1/users/**
           filters:
             - name: CircuitBreaker
               args:
