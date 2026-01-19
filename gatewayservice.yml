@@ -1,26 +1,14 @@
 server:
   port: 8080
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "*"
-  metrics:
-    tags:
-      application: ${spring.application.name}
-  endpoint:
-    health:
-      show-details: always
-      probes:
-        enabled: true
-  health:
-    livenessstate:
-      enabled: true
-    readinessstate:
-      enabled: true
+application:
+  security:
+    jwt:
+      secret-key: ${JWT_SECRET}
 
 spring:
+  application:
+    name: gateway-server
   data:
     redis:
       host: redis
@@ -32,28 +20,18 @@ spring:
           enabled: true
           lower-case-service-id: true
       routes:
+        # EXERCISE SERVICE
         - id: exercise-service
           uri: lb://exercise-service
           predicates:
             - Path=/api/v1/exercises/**
           filters:
-            - name: Retry
-              args:
-                retries: 3
-                methods: GET,POST
-                backoff:
-                  firstBackoff: 50ms
-                  maxBackoff: 500ms
             - name: CircuitBreaker
               args:
                 name: exerciseCB
                 fallbackUri: forward:/fallback/exercise
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 5
-                redis-rate-limiter.burstCapacity: 10
-                key-resolver: "#{@userKeyResolver}"
 
+        # WORKOUT SERVICE
         - id: workout-service
           uri: lb://workout-service
           predicates:
@@ -63,16 +41,12 @@ spring:
               args:
                 name: workoutCB
                 fallbackUri: forward:/fallback/workout
-            - name: RequestRateLimiter
-              args:
-                redis-rate-limiter.replenishRate: 5
-                redis-rate-limiter.burstCapacity: 10
-                key-resolver: "#{@userKeyResolver}"
 
+        # USER(AUTH) SERVICE
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/api/v1/users/**
+            - Path=/api/v1/users/**, /api/auth/**
           filters:
             - name: CircuitBreaker
               args:
@@ -83,44 +57,18 @@ spring:
         connect-timeout: 1000
         response-timeout: 4s
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  endpoint:
+    health:
+      show-details: always
+
 eureka:
   client:
-    fetch-registry: true
-    register-with-eureka: true
-    registry-fetch-interval-seconds: 5
     service-url:
       defaultZone: http://eurekaserver:8761/eureka/
   instance:
     prefer-ip-address: true
-    instance-id: ${spring.application.name}:${random.value}
-
-resilience4j:
-  circuitbreaker:
-    configs:
-      default:
-        slidingWindowSize: 10
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
-    instances:
-      exerciseCB:
-        baseConfig: default
-      workoutCB:
-        baseConfig: default
-      userCB:
-        baseConfig: default
-  timelimiter:
-    configs:
-      default:
-        timeoutDuration: 3s
-
-springdoc:
-  swagger-ui:
-    urls:
-      - name: Exercise Service
-        url: /api/v1/exercises/v3/api-docs
-      - name: Workout Service
-        url: /api/v1/workouts/v3/api-docs
-      - name: User Service
-        url: /api/v1/users/v3/api-docs
-    path: /swagger-ui.html
