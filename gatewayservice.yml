@@ -26,6 +26,7 @@ spring:
           predicates:
             - Path=/api/v1/exercises/**
           filters:
+            - AuthenticationFilter
             - name: CircuitBreaker
               args:
                 name: exerciseCB
@@ -37,23 +38,25 @@ spring:
           predicates:
             - Path=/api/v1/workouts/**
           filters:
+            - AuthenticationFilter
             - name: CircuitBreaker
               args:
                 name: workoutCB
                 fallbackUri: forward:/fallback/workout
 
-        # USER SERVICE - AUTH
+        # USER SERVICE - AUTH (public)
         - id: user-service-auth
           uri: lb://user-service
           predicates:
             - Path=/api/auth/**
 
-        # USER SERVICE - USERS
+        # USER SERVICE - USERS (Profil İşlemleri - Korumalı)
         - id: user-service
           uri: lb://user-service
           predicates:
             - Path=/api/v1/users/**
           filters:
+            - AuthenticationFilter
             - name: CircuitBreaker
               args:
                 name: userCB
