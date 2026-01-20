@@ -5,6 +5,17 @@ spring:
   application:
     name: exercise-service
 
+  rabbitmq:
+    host: rabbitmq
+    port: 5672
+    username: guest
+    password: guest
+    template:
+      retry:
+        enabled: true
+        initial-interval: 3s
+        max-attempts: 3
+
   datasource:
     url: jdbc:postgresql://exercisedb:5432/exercisedb
     username: postgres
