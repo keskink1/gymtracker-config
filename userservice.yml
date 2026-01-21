@@ -9,6 +9,13 @@ spring:
     username: postgres
     password: ${USER_DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
@@ -24,6 +31,8 @@ application:
     jwt:
       secret-key: ${JWT_SECRET}
       expiration: ${JWT_EXPIRATION}000
+      refresh-token:
+        expiration: 604800000
 
 management:
   endpoints:
